@@ -3,33 +3,26 @@ package route122
 import "strings"
 
 // Router provides HTTP routing functionality
-type Router struct {
+type Router[T any] struct {
 	tree *routingNode
 }
 
 // Match represents the result of a successful route match
-type Match struct {
-	Handler any               // The handler that matches the request
+type Match[T any] struct {
+	Handler T                 // The handler that matches the request
 	Params  map[string]string // Extracted path parameters
 	Pattern string            // The matching pattern
 }
 
 // New creates a new Router instance
-func New() *Router {
-	return &Router{
+func New[T any]() *Router[T] {
+	return &Router[T]{
 		tree: &routingNode{},
 	}
 }
 
 // Handle registers a new route pattern with its handler
-func (r *Router) Handle(pattern string, handler any) error {
-	if handler == nil {
-		return &RouteError{
-			Pattern: pattern,
-			Message: "handler cannot be nil",
-		}
-	}
-
+func (r *Router[T]) Handle(pattern string, handler T) error {
 	p, err := parsePattern(pattern)
 	if err != nil {
 		return &RouteError{
@@ -38,19 +31,21 @@ func (r *Router) Handle(pattern string, handler any) error {
 		}
 	}
 
+	// Convert to any for the internal routing tree
 	r.tree.addPattern(p, handler)
 	return nil
 }
 
 // Match finds the handler that matches the given method, host, and path
-func (r *Router) Match(method, host, path string) (Match, bool) {
+func (r *Router[T]) Match(method, host, path string) (Match[T], bool) {
 	node, params := r.tree.match(host, method, path)
 	if node == nil || node.handler == nil {
-		return Match{}, false
+		var zero Match[T]
+		return zero, false
 	}
 
-	return Match{
-		Handler: node.handler,
+	return Match[T]{
+		Handler: node.handler.(T),
 		Params:  convertParams(params, node.pattern),
 		Pattern: node.pattern.String(),
 	}, true

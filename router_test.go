@@ -5,7 +5,7 @@ import (
 )
 
 func TestBasicRouting(t *testing.T) {
-	r := New()
+	r := New[string]()
 
 	err := r.Handle("GET /users/{id}", "getUserHandler")
 	if err != nil {
@@ -27,7 +27,7 @@ func TestBasicRouting(t *testing.T) {
 }
 
 func TestWildcardRouting(t *testing.T) {
-	r := New()
+	r := New[string]()
 
 	err := r.Handle("GET /files/{path...}", "fileHandler")
 	if err != nil {
@@ -46,7 +46,7 @@ func TestWildcardRouting(t *testing.T) {
 }
 
 func TestHostSpecificRouting(t *testing.T) {
-	r := New()
+	r := New[string]()
 
 	err := r.Handle("GET api.example.com/users/{id}", "apiHandler")
 	if err != nil {
@@ -142,7 +142,7 @@ func TestMultipleRoutes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := New()
+			r := New[string]()
 
 			err := r.Handle(tt.pattern, "handler")
 			if err != nil {
@@ -206,7 +206,7 @@ func TestMismatchCases(t *testing.T) {
 
 	for _, tt := range mismatchTests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := New()
+			r := New[string]()
 
 			for _, route := range tt.registeredRoutes {
 				if err := r.Handle(route, "handler"); err != nil {
@@ -223,16 +223,11 @@ func TestMismatchCases(t *testing.T) {
 }
 
 func TestRouteRegistrationErrors(t *testing.T) {
-	r := New()
-
-	// Test nil handler
-	err := r.Handle("GET /test", nil)
-	if err == nil {
-		t.Error("Expected error for nil handler")
-	}
+	r := New[*string]()
 
 	// Test invalid pattern (missing slash)
-	err = r.Handle("INVALID", "handler")
+	var testHandler *string = new(string)
+	err := r.Handle("INVALID", testHandler)
 	if err == nil {
 		t.Error("Expected error for invalid pattern")
 	}
